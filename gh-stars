@@ -1,35 +1,79 @@
 #!/bin/bash
 set -e
 
-echo "Hello gh-tamamono!"
+help() {
+  cat <<EOF
+Usage: gh stars
+Displays an interactive your stars. The selected star is print url.
+Dependencies: fzf
+EOF
+}
 
-# Snippets to help get started:
+is_number=0
 
-# Determine if an executable is in the PATH
-# if ! type -p ruby >/dev/null; then
-#   echo "Ruby not found on the system" >&2
-#   exit 1
-# fi
+while [ $# -gt 0 ]; do
+  case "$1" in
+  -h|--help)
+    help
+    exit 0
+    ;;
+  *)
+    help >&2
+    exit 1
+    ;;
+  esac
+  shift
+done
 
-# Pass arguments through to another command
-# gh issue list "$@" -R cli/cli
 
-# Using the gh api command to retrieve and format information
-# QUERY='
-#   query($endCursor: String) {
-#     viewer {
-#       repositories(first: 100, after: $endCursor) {
-#         nodes {
-#           nameWithOwner
-#           stargazerCount
-#         }
-#       }
-#     }
-#   }
-# '
-# TEMPLATE='
-#   {{- range $repo := .data.viewer.repositories.nodes -}}
-#     {{- printf "name: %s - stargazers: %v\n" $repo.nameWithOwner $repo.stargazerCount -}}
-#   {{- end -}}
-# '
-# exec gh api graphql -f query="${QUERY}" --paginate --template="${TEMPLATE}"
+list_stars() {
+  # shellcheck disable=SC2016
+  gh api graphql --cache=5m --paginate -f query='
+    query($endCursor: String){
+      viewer {
+        starredRepositories(first: 30, after: $endCursor, orderBy: {field: STARRED_AT, direction: DESC}) {
+          edges {
+            node {
+              nameWithOwner
+              url
+            }
+            starredAt
+          }
+        }
+      }
+    }
+    ' --template '
+    {{- range $edge := .data.viewer.starredRepositories.edges -}}
+      {{- $edge.node.nameWithOwner | printf "%s\t" -}}
+      {{- $edge.starredAt | printf "%s\n" -}}
+    {{- end -}}
+  '
+}
+
+tableize() {
+  column -t -s$'\t'
+}
+
+render() {
+  local nameWithOwner starredAt
+  all_stars="$(list_stars 2>/dev/null || true)"
+  while read nameWithOwner starredAt
+  do
+    local_starred_at=$(date -r "$(date -u -jf %FT%TZ "$starredAt" +%s)")
+    printf "%s\t%s\n" "$nameWithOwner" "$local_starred_at"
+  done <<< "${all_stars}"
+}
+
+choose() {
+  render | tableize | fzf --ansi --height 50% --layout=reverse
+}
+
+if ! type -p fzf >/dev/null; then
+  echo "error: install \`fzf\` to use this command" >&2
+  exit 1
+fi
+
+selected="$(choose)"
+[ -n "$selected" ] || exit 1
+echo "https://github.com/${selected%% *}"
+
