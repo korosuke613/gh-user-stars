@@ -1,15 +1,19 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 help() {
   cat <<EOF
-Usage: gh stars
 Displays an interactive your stars. The selected star is print url.
 Dependencies: fzf
+
+Usage
+  gh stars [NUMBER]
+
+NUMBER: Number of stars to display (default: 30)
 EOF
 }
 
-is_number=0
+number=30
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -18,9 +22,7 @@ while [ $# -gt 0 ]; do
     exit 0
     ;;
   *)
-    help >&2
-    exit 1
-    ;;
+    number=$1
   esac
   shift
 done
@@ -28,10 +30,10 @@ done
 
 list_stars() {
   # shellcheck disable=SC2016
-  gh api graphql --cache=5m --paginate -f query='
-    query($endCursor: String){
+  gh api graphql --cache=5m --paginate -F first="${number}" -f query='
+    query($first: Int, $endCursor: String){
       viewer {
-        starredRepositories(first: 30, after: $endCursor, orderBy: {field: STARRED_AT, direction: DESC}) {
+        starredRepositories(first: $first, after: $endCursor, orderBy: {field: STARRED_AT, direction: DESC}) {
           edges {
             node {
               nameWithOwner
@@ -59,13 +61,13 @@ render() {
   all_stars="$(list_stars 2>/dev/null || true)"
   while read nameWithOwner starredAt
   do
-    local_starred_at=$(date -r "$(date -u -jf %FT%TZ "$starredAt" +%s)")
+    local_starred_at=$(date -r "$(date -u -jf %FT%TZ "${starredAt}" +%s)" +"%F %T")
     printf "%s\t%s\n" "$nameWithOwner" "$local_starred_at"
   done <<< "${all_stars}"
 }
 
 choose() {
-  render | tableize | fzf --ansi --height 50% --layout=reverse
+  render | tableize | fzf --ansi --height 90% --layout=reverse
 }
 
 if ! type -p fzf >/dev/null; then
