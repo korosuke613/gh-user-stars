@@ -7,7 +7,7 @@ Displays an interactive your stars. The selected star is print url.
 Dependencies: fzf
 
 Usage
-  gh stars [NUMBER]
+  gh user-stars [NUMBER]
 
 NUMBER: Number of stars to display (default: 30)
 EOF

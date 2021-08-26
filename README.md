@@ -1,16 +1,16 @@
-# gh-stars
+# gh-user-stars
 Displays an interactive your github stars.
 
-![](./gh-stars.gif)
+![](./demo.gif)
 
 ## usage
 ```
-❯ gh stars -h
+❯ gh user-stars -h
 Displays an interactive your stars. The selected star is print url.
 Dependencies: fzf
 
 Usage
-  gh stars [NUMBER]
+  gh user-stars [NUMBER]
 
 NUMBER: Number of stars to display (default: 30)
 ```
@@ -21,7 +21,7 @@ If you want to change the number of stars to get, put a number in the first argu
 required fzf command.
 
 ```
-gh extension install korosuke613/gh-stars
+gh extension install korosuke613/gh-user-stars
 ```
 
 
