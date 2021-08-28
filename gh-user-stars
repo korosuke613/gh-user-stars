@@ -27,7 +27,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-
 list_stars() {
   # shellcheck disable=SC2016
   gh api graphql --cache=5m --paginate -F first="${number}" -f query='
@@ -56,12 +55,22 @@ tableize() {
   column -t -s$'\t'
 }
 
+convert_date_for_utc_to_local(){
+  # Determine whether to use gnu-date or bsd-date
+  # If `date -help` fails, use bsd-date
+  if date --help 1>/dev/null 2>/dev/null; then
+    date -d "$1" +"%F %T"
+  else
+    date -r "$(date -u -jf %FT%TZ "$1" +%s)" +"%F %T"
+  fi
+}
+
 render() {
   local nameWithOwner starredAt
   all_stars="$(list_stars 2>/dev/null || true)"
   while read nameWithOwner starredAt
   do
-    local_starred_at=$(date -r "$(date -u -jf %FT%TZ "${starredAt}" +%s)" +"%F %T")
+    local_starred_at=$(convert_date_for_utc_to_local "${starredAt}")
     printf "%s\t%s\n" "$nameWithOwner" "$local_starred_at"
   done <<< "${all_stars}"
 }
