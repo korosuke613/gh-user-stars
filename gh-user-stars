@@ -13,7 +13,7 @@ Dependencies: fzf
 Usage
   gh user-stars [NUMBER]
 
-NUMBER: Number of stars to fetch at a time. (default: ${number})
+NUMBER: Number of stars to fetch at a time. (default: ${number}, max: 100)
 "
   echo "${message}"
 }
@@ -35,6 +35,12 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+if [[ $number -gt 100 ]]; then
+  # detail: https://github.com/korosuke613/gh-user-stars/issues/8#issuecomment-910379829
+  echo "error: the maximum value of NUMBER is 100." >&2
+  exit 1
+fi
 
 if ! type -p fzf >/dev/null; then
   echo "error: install \`fzf\` to use this command" >&2
