@@ -12,7 +12,7 @@ Dependencies: fzf
 Usage
   gh user-stars [NUMBER]
 
-NUMBER: Number of stars to display (default: 30)
+NUMBER: Number of stars to fetch at a time. (default: 50)
 ```
 
 If you want to change the number of stars to get, put a number in the first argument. (default: 30)

@@ -1,19 +1,28 @@
 #!/bin/bash
-set -euo pipefail
+
+extensionPath="$(dirname "${0}")"
+source "${extensionPath}/libs.sh"
+
+number=50
 
 help() {
-  cat <<EOF
+  message="
 Displays an interactive your stars. The selected star is print url.
 Dependencies: fzf
 
 Usage
   gh user-stars [NUMBER]
 
-NUMBER: Number of stars to display (default: 30)
-EOF
+NUMBER: Number of stars to fetch at a time. (default: ${number})
+"
+  echo "${message}"
 }
 
-number=30
+choose() {
+  number=$1
+  (loop_list_stars "${1}" & echo $! >&3) 3>"${extensionPath}/pid" | fzf --height 90% --layout=reverse
+  kill $(<"${extensionPath}/pid") 2>/dev/null
+}
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -27,64 +36,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-list_stars() {
-  # shellcheck disable=SC2016
-  gh api graphql --cache=5m --paginate -F first="${number}" -f query='
-    query($first: Int, $endCursor: String){
-      viewer {
-        starredRepositories(first: $first, after: $endCursor, orderBy: {field: STARRED_AT, direction: DESC}) {
-          edges {
-            node {
-              nameWithOwner
-              url
-            }
-            starredAt
-          }
-        }
-      }
-    }
-    ' --template '
-    {{- range $edge := .data.viewer.starredRepositories.edges -}}
-      {{- $edge.node.nameWithOwner | printf "%s\t" -}}
-      {{- $edge.starredAt | printf "%s\n" -}}
-    {{- end -}}
-  '
-}
-
-tableize() {
-  column -t -s$'\t'
-}
-
-convert_date_for_utc_to_local(){
-  # Determine whether to use gnu-date or bsd-date
-  # If `date -help` fails, use bsd-date
-  if date --help 1>/dev/null 2>/dev/null; then
-    date -d "$1" +"%F %T"
-  else
-    date -r "$(date -u -jf %FT%TZ "$1" +%s)" +"%F %T"
-  fi
-}
-
-render() {
-  local nameWithOwner starredAt
-  all_stars="$(list_stars 2>/dev/null || true)"
-  while read nameWithOwner starredAt
-  do
-    local_starred_at=$(convert_date_for_utc_to_local "${starredAt}")
-    printf "%s\t%s\n" "$nameWithOwner" "$local_starred_at"
-  done <<< "${all_stars}"
-}
-
-choose() {
-  render | tableize | fzf --ansi --height 90% --layout=reverse
-}
-
 if ! type -p fzf >/dev/null; then
   echo "error: install \`fzf\` to use this command" >&2
   exit 1
 fi
 
-selected="$(choose)"
+selected="$(choose "${number}")"
 [ -n "$selected" ] || exit 1
 echo "https://github.com/${selected%% *}"
-
