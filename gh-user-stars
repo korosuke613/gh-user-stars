@@ -8,7 +8,7 @@ number=50
 help() {
   message="
 Displays an interactive your stars. The selected star is print url.
-Dependencies: fzf
+Dependencies: fzf, jq
 
 Usage
   gh user-stars [NUMBER]
@@ -44,6 +44,11 @@ fi
 
 if ! type -p fzf >/dev/null; then
   echo "error: install \`fzf\` to use this command" >&2
+  exit 1
+fi
+
+if ! type -p jq >/dev/null; then
+  echo "error: install \`jq\` to use this command" >&2
   exit 1
 fi
 
