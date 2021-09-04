@@ -7,7 +7,9 @@ number=50
 
 help() {
   message="
-Displays an interactive your stars. The selected star is print url.
+Displays an interactive list of your starred repositories.
+The URL of the selected repository is printed as the output of the command.
+
 Dependencies: fzf, jq
 
 Usage
@@ -38,17 +40,17 @@ done
 
 if [[ $number -gt 100 ]]; then
   # detail: https://github.com/korosuke613/gh-user-stars/issues/8#issuecomment-910379829
-  echo "error: the maximum value of NUMBER is 100." >&2
+  echo "Error: The maximum value of NUMBER is 100." >&2
   exit 1
 fi
 
 if ! type -p fzf >/dev/null; then
-  echo "error: install \`fzf\` to use this command" >&2
+  echo "Error: Install \`fzf\` to use this command." >&2
   exit 1
 fi
 
 if ! type -p jq >/dev/null; then
-  echo "error: install \`jq\` to use this command" >&2
+  echo "Error: Install \`jq\` to use this command." >&2
   exit 1
 fi
 
