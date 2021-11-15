@@ -29,7 +29,7 @@ call_star_api(){
 
 list_stars() {
   result=$(call_star_api "$1" "${endCursor}")
-  list="$(echo $result | jq -r '.data.viewer.starredRepositories.edges[] | [.node.nameWithOwner, (.starredAt|fromdateiso8601|gmtime|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))] | @tsv')"
+  list="$(echo $result | jq -r '.data.viewer.starredRepositories.edges[] | [.node.nameWithOwner, (.starredAt|fromdateiso8601|localtime|strflocaltime("%Y-%m-%d %H:%M:%S"))] | @tsv')"
   echo "${list}" | column -t -s$'\t'
   endCursor=$(echo $result | jq -r '.data.viewer.starredRepositories.pageInfo.endCursor')
   is_end=$(echo $result | jq -r '.data.viewer.starredRepositories.pageInfo.hasNextPage')
